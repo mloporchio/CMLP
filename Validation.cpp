@@ -163,6 +163,7 @@ cv_search_t grid_search_CV(
   // We store one score for each configuration.
   std::vector<double> scores(configs.size());
   // For each configuration...
+#pragma omp parallel for
   for (int i = 0; i < configs.size(); i++) {
     cv_config_t c = configs.at(i);
     // Build the model according to the current configuration.
