@@ -151,6 +151,7 @@ cv_search_t grid_search_CV(
   const arma::mat &X, // Input data set.
   const arma::mat &Y, // Target features.
   int k, // Number of parts to split the data set into.
+  int par_degree, // Parallelism degree.
   scorer_ptr score_f, // Pointer to a scoring function.
   bool minimize, // Whether to minimize the score or not.
   bool shuffle // Whether to shuffle the patterns or not.
@@ -162,8 +163,8 @@ cv_search_t grid_search_CV(
   std::vector<cv_config_t> configs = build_configs(parameters);
   // We store one score for each configuration.
   std::vector<double> scores(configs.size());
-  // For each configuration...
-#pragma omp parallel for
+  // Test each configuration with a given parallelism degree...
+  #pragma omp parallel for num_threads(par_degree)
   for (int i = 0; i < configs.size(); i++) {
     cv_config_t c = configs.at(i);
     // Build the model according to the current configuration.

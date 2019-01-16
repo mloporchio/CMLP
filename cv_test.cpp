@@ -15,13 +15,14 @@
 
 int main(int argc, char **argv) {
   // Check the number of arguments.
-  if (argc < 2) {
+  if (argc < 3) {
     std::cerr << "Usage:" << std::endl
-    << argv[0] << " <k>" << std::endl;
+    << argv[0] << " <k> <par_degree>" << std::endl;
     return 1;
   }
   // Parse their values.
-  int k = atoi(argv[1]);
+  int k = atoi(argv[1]),
+  par_degree = atoi(argv[2]);
 	// Read the data from the CSV files.
 	arma::mat X_train, Y_train;
   X_train.load(MLCUP_TRAIN_X, arma::csv_ascii);
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
     .max_epochs_v=std::vector<int>({1000})
   };
   cv_search_t search_result = grid_search_CV(parameters, X_train, Y_train, k,
-  mean_euclidean_error, true, false);
+  par_degree, mean_euclidean_error, true, false);
   std::cout << "Best score: " << search_result.best_score << std::endl
   << "Best configuration: " << to_string(search_result.best_config)
   << std::endl;

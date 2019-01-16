@@ -132,7 +132,8 @@ const std::vector<cv_partition_t> &parts, scorer_ptr score_f);
 
 // Grid search with k-fold cross-validation.
 cv_search_t grid_search_CV(cv_grid_t parameters, const arma::mat &X,
-const arma::mat &Y, int k, scorer_ptr score_f, bool minimize, bool shuffle);
+const arma::mat &Y, int k, int par_degree, scorer_ptr score_f, 
+bool minimize, bool shuffle);
 
 // Random search with k-fold cross-validation.
 cv_search_t random_search_CV(cv_bounds_t bounds, int max_configs,
