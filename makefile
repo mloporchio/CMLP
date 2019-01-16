@@ -1,6 +1,6 @@
 CXX=g++
-CXX_FLAGS= -std=c++11 -O2 -I ./armadillo-9.200.7/include -Xpreprocessor -fopenmp -lomp
-LD_FLAGS= -framework Accelerate
+CXX_FLAGS= -std=c++11 -O2 -I ./armadillo-9.200.7/include -Xpreprocessor -fopenmp
+LD_FLAGS= -framework Accelerate -lomp
 
 .PHONY: cleanall
 
