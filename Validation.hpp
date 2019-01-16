@@ -137,7 +137,7 @@ bool minimize, bool shuffle);
 
 // Random search with k-fold cross-validation.
 cv_search_t random_search_CV(cv_bounds_t bounds, int max_configs,
-const arma::mat &X, const arma::mat &Y, int k, scorer_ptr score_f,
-bool minimize, bool shuffle);
+const arma::mat &X, const arma::mat &Y, int k, int par_degree,
+scorer_ptr score_f, bool minimize, bool shuffle);
 
 #endif

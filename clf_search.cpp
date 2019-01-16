@@ -24,8 +24,15 @@
 #define MONKS3_TEST_Y "Data/monks-3.test.Y.csv"
 
 int main(int argc, char **argv) {
-    int data_set_id = atoi(argv[1]);
-	int n_configs = atoi(argv[2]);
+	// Read the arguments.
+	if (argc < 4) {
+		std::cerr << "Usage: " << argv[0] <<
+		" <data_set_id> <n_configs> <par_degree>" << std::endl;
+		return 1;
+	}
+    int data_set_id = atoi(argv[1]),
+	n_configs = atoi(argv[2]),
+	par_degree = atoi(argv[3]);
 	// Read the data from the CSV files.
 	arma::mat X, Y, X_test, Y_test;
 	switch (data_set_id) {

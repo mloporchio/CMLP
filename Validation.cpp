@@ -191,22 +191,25 @@ cv_search_t grid_search_CV(
 
 // Experimental random search with CV.
 cv_search_t random_search_CV(cv_bounds_t param_bounds, int max_configs,
-const arma::mat &X, const arma::mat &Y, int k, scorer_ptr score_f,
-bool minimize, bool shuffle) {
-  // Here we store the scores.
-  std::vector<double> scores;
+const arma::mat &X, const arma::mat &Y, int k, int par_degree,
+scorer_ptr score_f, bool minimize, bool shuffle) {
   // Here we store the tested configurations.
-  std::vector<cv_config_t> configs;
-  // Number of tried configurations.
-  int n = 0;
+  std::vector<cv_config_t> configs(max_configs);
+  // Here we store the scores.
+  std::vector<double> scores(max_configs);
   // Build a configuration generator.
   config_generator generator(param_bounds);
   // Compute the partitioning is computed once and for all.
   std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
-  // Try at most max_configs configurations.
-  while (n < max_configs) {
+  // Generate max_configs random configurations.
+  for (int i = 0; i < max_configs; i++) {
     // Generate a random configuration within the given bounds.
-    cv_config_t c = generator.get_random_config();
+    configs.at(i) = generator.get_random_config();
+  }
+  // Try max_configs configurations.
+  #pragma omp parallel for num_threads(par_degree)
+  for (int i = 0; i < max_configs; i++) {
+    cv_config_t c = configs.at(i);
     // Build the model according to the current configuration.
     MLP m(std::vector<Layer>({
       Layer(c.hidden_layer_size, X.n_cols, sigmoid, sigmoid_d),
@@ -214,10 +217,8 @@ bool minimize, bool shuffle) {
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
     double s = k_fold_CV_prep(m, X, Y, parts, score_f);
-    // Save the score to a vector.
-    scores.push_back(s);
-    configs.push_back(c);
-    n++;
+    // Save the score.
+    scores.at(i) = s;
   }
   // This struct is used to store the results.
   cv_search_t search_result;
