@@ -67,7 +67,9 @@ double MLP::minibatch_train(
   const arma::mat &X, // Input data set.
   const arma::mat &Y, // Target values for the patterns.
   id_vector &ind, // Vector of row indexes, to be used for shuffling.
-  arma::mat *output // Pointer to a matrix used to save the training output.
+  // Optional: pointer to a matrix used to save the training output.
+  // If the parameter is not supplied, no output will be written.
+  arma::mat *output 
 ) 
 {
   double error = 0.0;
