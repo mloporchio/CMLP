@@ -6,9 +6,7 @@
  */
 
 #include "MLP.hpp"
-#include "Error.hpp"
 #include "Decay.hpp"
-#include "Utils.hpp"
 #include <limits>
 #include <random>
 
@@ -48,7 +46,7 @@ double tol, bool shuffle, unsigned int seed)
 
 // Initializes the gradient matrices in each layer with zeros.
 void MLP::init_gradients() {
-  for (int j = 0; j < layers.size(); j++) {
+  for (int j = 0; j < l; j++) {
     layers[j].gW.zeros();
     layers[j].gb.zeros();
   }
@@ -58,10 +56,63 @@ void MLP::init_gradients() {
 void MLP::init_weights() {
   // We use this lambda function to fill the vectors.
   auto fill_f = [&]() {return dist(gen);};
-  for (int j = 0; j < layers.size(); j++) {
+  for (int j = 0; j < l; j++) {
     layers[j].W.imbue(fill_f);
     layers[j].b.imbue(fill_f);
   }
+}
+
+// Performs a training epoch using the minibatch technique.
+double MLP::minibatch_train(
+  const arma::mat &X, // Input data set.
+  const arma::mat &Y, // Target values for the patterns.
+  id_vector &ind, // Vector of row indexes, to be used for shuffling.
+  arma::mat *output // Pointer to a matrix used to save the training output.
+) 
+{
+  double error = 0.0;
+  // Shuffle the elements, if necessary.
+  if (shuffle) shuffle_elements(ind);
+  // Split the training set into batches.
+  std::vector<id_vector> batches = split(ind, batch_size);
+  // For each batch of items...
+  for (const auto &b : batches) {
+    // Initialize the gradients.
+    init_gradients();
+    // For each item in the current batch...
+    for (arma::uword i : b) {
+      arma::rowvec x = X.row(i), y = Y.row(i);
+      // Forward the pattern across the network.
+      layers[0].forward(x);
+      for (int j = 1; j < l; j++) layers[j].forward(layers[j-1].y);
+      // Store the result in the output matrix, if needed.
+      if (output) output -> row(i) = layers[l-1].y;
+      // Compute the loss on the current example.
+      error += squared_error(y, layers[l-1].y);
+      // Backpropagate the error.
+      arma::rowvec e = squared_error_d(y, layers[l-1].y);
+      layers[l-1].d = e % layers[l-1].dy;
+      for (int j = l - 2; j >= 0; j--) {
+        layers[j].d = layers[j].dy % (layers[j+1].d * layers[j+1].W);
+      }
+      // Update the gradients according to the current pattern.
+      layers[0].gW += layers[0].d.t() * x;
+      layers[0].gb += layers[0].d;
+      for (int j = 1; j < l; j++) {
+        layers[j].gW += layers[j].d.t() * layers[j-1].y;
+        layers[j].gb += layers[j].d;
+      }
+      // Update the weights of the nodes in each layer.
+      for (int j = 0; j < l; j++) {
+        layers[j].dW = -eta * ((layers[j].gW / b.size()) 
+        + lambda * layers[j].W) + alpha * layers[j].dW;
+        layers[j].db = -eta * (layers[j].gb / b.size()) + alpha * layers[j].db;
+        layers[j].W += layers[j].dW;
+        layers[j].b += layers[j].db;
+      }
+    }
+  }
+  return error / X.n_rows;
 }
 
 // This method is used to train the network. The training is performed
@@ -71,63 +122,21 @@ void MLP::train(const arma::mat &X, const arma::mat &Y) {
   assert(X.n_rows == Y.n_rows);
   int k = 0, count = 0;
   bool converged = false;
-  double curr_error = 0.0, 
-  best_error = std::numeric_limits<double>::infinity();
+  double best_error = std::numeric_limits<double>::infinity();
   // Initialize weights and biases in each layer.
   init_weights();
   // Initialize the learning rate.
   eta = eta_init;
   // Generate the vector containing row indexes.
-  id_vector rows = range_v(X.n_rows);
+  id_vector ind = range_v(X.n_rows);
   // Main loop of the training method.
   while (!converged && k < max_epochs) {
-    // Shuffle the elements, if necessary.
-    if (shuffle) shuffle_elements(rows);
-    // Split the training set into batches.
-    std::vector<id_vector> batches = split(rows, batch_size);
-    // For each batch of items...
-    for (const auto &b : batches) {
-      // Initialize the gradients.
-      init_gradients();
-      // For each item in the current batch...
-      for (arma::uword i : b) {
-        arma::rowvec x = X.row(i), y = Y.row(i);
-        // Forward the pattern across the network.
-        layers[0].forward(x);
-        for (int j = 1; j < l; j++) layers[j].forward(layers[j-1].y);
-        // Compute the loss on the current example.
-        curr_error += squared_error(y, layers[l-1].y);
-        // Backpropagate the error.
-        arma::rowvec e = squared_error_d(y, layers[l-1].y);
-        layers[l-1].d = e % layers[l-1].dy;
-        for (int j = l - 2; j >= 0; j--) {
-          layers[j].d = layers[j].dy % (layers[j+1].d * layers[j+1].W);
-        }
-        // Update the gradients according to the current pattern.
-        layers[0].gW += layers[0].d.t() * x;
-        layers[0].gb += layers[0].d;
-        for (int j = 1; j < l; j++) {
-          layers[j].gW += layers[j].d.t() * layers[j-1].y;
-          layers[j].gb += layers[j].d;
-        }
-      }
-      // Finally, update the weights of the nodes.
-      for (int j = 0; j < layers.size(); j++) {
-        layers[j].dW = -eta * ((layers[j].gW / b.size()) 
-        + lambda * layers[j].W) + alpha * layers[j].dW;
-        layers[j].db = -eta * (layers[j].gb / b.size()) + alpha * layers[j].db;
-        layers[j].W += layers[j].dW;
-        layers[j].b += layers[j].db;
-      }
-    }
-    //
-    // Compute the mean error.
-    curr_error /= X.n_rows;
+    // Train using the minibatch approach.
+    double curr_error = minibatch_train(X, Y, ind);
     // Check if convergence has been reached.
     count = (curr_error > best_error - tol) ? (count + 1) : 0;
     if (curr_error < best_error) best_error = curr_error;
     converged = (count >= max_unchanged);
-    curr_error = 0.0;
     k++;
     // Update eta for the next epoch.
     eta = invscaling(eta_init, decay, k * X.n_rows);
@@ -145,7 +154,48 @@ arma::mat MLP::predict(const arma::mat &X) {
   return build_matrix(output);
 }
 
-// Returns a vector containing the error at each epoch.
-arma::vec MLP::get_curve() {
-  return arma::vec(curve);
+// Generates the learning curves for the given training and validation sets.
+mlp_curve_t MLP::learning_curve(
+  const arma::mat &X_train, // Training set data.
+  const arma::mat &Y_train, // Training set target values.
+  const arma::mat &X_val, // Validation set data.
+  const arma::mat &Y_val, // Validation set target values.
+  scorer_ptr score_f // Scoring function used to evaluate the model.
+) 
+{
+  // This matrix is used to store the output of the training process.
+  arma::mat train_output(Y_train.n_rows, Y_train.n_cols);
+  // Here we store the scores at each epoch.
+  std::vector<double> train_hist, val_hist;
+  int k = 0, count = 0;
+  bool converged = false;
+  double best_error = std::numeric_limits<double>::infinity();
+  // Initialize weights and biases in each layer.
+  init_weights();
+  // Initialize the learning rate.
+  eta = eta_init;
+  // Generate the vector containing row indexes.
+  id_vector ind = range_v(X_train.n_rows);
+  // Main loop of the training method.
+  while (!converged && k < max_epochs) {
+    // Train using the minibatch approach.
+    double curr_error = minibatch_train(X_train, Y_train, ind, &train_output);
+    // Compute the score on the training set.
+    train_hist.push_back(score_f(Y_train, train_output));
+    // Compute the score on the validation set.
+    arma::mat val_output = predict(X_val);
+    val_hist.push_back(score_f(Y_val, val_output));
+    // Check if convergence has been reached.
+    count = (curr_error > best_error - tol) ? (count + 1) : 0;
+    if (curr_error < best_error) best_error = curr_error;
+    converged = (count >= max_unchanged);
+    k++;
+    // Update eta for the next epoch.
+    eta = invscaling(eta_init, decay, k * X_train.n_rows);
+  }
+  mlp_curve_t c = {
+    .train_curve = arma::vec(train_hist),
+    .val_curve = arma::vec(val_hist)
+  };
+  return c;
 }

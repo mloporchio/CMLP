@@ -30,7 +30,10 @@ arma::rowvec cross_entropy_d(arma::rowvec target, arma::rowvec output);
 // Computes the mean euclidean error between target and output data.
 double mean_euclidean_error(arma::mat target, arma::mat output);
 
+double mean_squared_error(arma::mat target, arma::mat output);
+
 // Computes the output accuracy w.r.t. target data.
 double accuracy(arma::mat target, arma::mat output);
+
 
 #endif

@@ -9,11 +9,19 @@
 #define MLP_H
 
 #include "Layer.hpp"
+#include "Error.hpp"
+#include "Utils.hpp"
 
 // Mean of the distribution used to initialize the weights.
 #define DIST_MEAN 0.0
 // Variance of the distribution used to initialize the weights.
 #define DIST_VAR 1.0
+
+// This struct contains the learning curves for training and validation set.
+typedef struct {
+  arma::vec train_curve;
+  arma::vec val_curve;
+} mlp_curve_t;
 
 class MLP {
   private:
@@ -21,8 +29,6 @@ class MLP {
     std::vector<Layer> layers;
     // Number of layers.
     int l;
-    // Learning curve of the MLP.
-    std::vector<double> curve;
     // Initial learning rate.
     double eta_init;
     // Current value of the learning rate.
@@ -50,6 +56,9 @@ class MLP {
     void init_gradients();
     // Initializes weights and biases in each layer with random numbers.
     void init_weights();
+    // Performs a training epoch using the minibatch technique.
+    double minibatch_train(const arma::mat &X, const arma::mat &Y, 
+    id_vector &ind, arma::mat *output = NULL);
   public:
     // Class constructor.
     //  - v: vector of layers
@@ -75,8 +84,10 @@ class MLP {
     void train(const arma::mat &X, const arma::mat &Y);
     // This function can be used to predict target values for new data.
     arma::mat predict(const arma::mat &X);
-    // Returns a vector containing the error at each epoch.
-    arma::vec get_curve();
+    // Generates the learning curves for the given training and validation sets.
+    mlp_curve_t learning_curve(const arma::mat &X_train, 
+    const arma::mat &Y_train, const arma::mat &X_val, const arma::mat &Y_val,
+    scorer_ptr score_f); 
 };
 
 #endif

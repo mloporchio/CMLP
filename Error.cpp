@@ -7,7 +7,7 @@
 
 #include "Error.hpp"
 
-// Computes the squared error for the current instance.
+// Computes the squared error for the current output pattern.
 double squared_error(arma::rowvec target, arma::rowvec output) {
   return arma::sum(arma::square(target - output)) / 2;
 }
@@ -33,6 +33,15 @@ double mean_euclidean_error(arma::mat target, arma::mat output) {
   double sum = 0.0;
   for (arma::uword i = 0; i < target.n_rows; i++) {
     sum += arma::norm(target.row(i) - output.row(i), 2);
+  }
+  return sum / target.n_rows;
+}
+
+// Computes the mean squared error between target and output data.
+double mean_squared_error(arma::mat target, arma::mat output) {
+  double sum = 0.0;
+  for (arma::uword i = 0; i < target.n_rows; i++) {
+    sum += squared_error(target.row(i), output.row(i));
   }
   return sum / target.n_rows;
 }
