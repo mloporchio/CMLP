@@ -1,5 +1,5 @@
 /*
- *  File: reg_test.cpp
+ *  File: cup_test.cpp
  *
  *	This file tests the implementation of the MLP for the regression task
  *  on the ML CUP data set. The model is tested with a k-fold CV on the
@@ -7,7 +7,7 @@
  *
  *	Usage:
  *
- *  reg_test followed by these parameters:
+ *  cup_test followed by these parameters:
  *
  *    - <hidden_layer_size>
  *    - <eta>

@@ -1,5 +1,5 @@
 /*
- *  File: clf_search.cpp
+ *  File: monks_val.cpp
  *
  *  In this file we test different configurations of the MLP in order
  *  to maximize the accuracy score on the Monks data sets.
@@ -25,14 +25,15 @@
 
 int main(int argc, char **argv) {
 	// Read the arguments.
-	if (argc < 4) {
+	if (argc < 5) {
 		std::cerr << "Usage: " << argv[0] <<
-		" <data_set_id> <n_configs> <par_degree>" << std::endl;
+		" <data_set_id> <frac> <n_configs> <par_degree>" << std::endl;
 		return 1;
 	}
     int data_set_id = atoi(argv[1]),
-	n_configs = atoi(argv[2]),
-	par_degree = atoi(argv[3]);
+	n_configs = atoi(argv[3]),
+	par_degree = atoi(argv[4]);
+	double frac = atof(argv[2]);
 	// Read the data from the CSV files.
 	arma::mat X, Y, X_test, Y_test;
 	switch (data_set_id) {
@@ -60,8 +61,8 @@ int main(int argc, char **argv) {
 		break;
 	}
 	// Create a validation set starting from the given training set.
-	// 30% of the records of the original set are reserved for validation.
-	cv_partition_t split_p = split_in_two(X, 0.3, true);
+	// A fraction of the records of the original set is reserved for validation.
+	cv_partition_t split_p = split_in_two(X, frac, true);
 	arma::mat X_train = X.rows(split_p.train_ids),
 	Y_train = Y.rows(split_p.train_ids),
 	X_valid = X.rows(split_p.test_ids),
@@ -79,9 +80,13 @@ int main(int argc, char **argv) {
 	config_generator cfg_gen(params);
 	std::vector<cv_config_t> configs(n_configs);
 	std::vector<double> scores(n_configs);
-	// Generate n_configs random configurations and try them.
+	// Generate n_configs random configurations.
 	for (int i = 0; i < n_configs; i++) {
-		cv_config_t c = cfg_gen.get_random_config();
+		configs.at(i) = cfg_gen.get_random_config();
+	}
+	// Try all the generated configurations.
+	for (int i = 0; i < n_configs; i++) {
+		cv_config_t c = configs.at(i);
 		MLP m(std::vector<Layer>({
       		Layer(c.hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
       		Layer(Y_train.n_cols, c.hidden_layer_size, sigmoid, sigmoid_d)
@@ -91,15 +96,16 @@ int main(int argc, char **argv) {
 		arma::mat Y_out = m.predict(X_valid);
 		// Compute the accuracy on the validation set.
 		scores.at(i) = accuracy(Y_valid, arma::round(Y_out));
-		configs.at(i) = c;
 	}
+	// Look for the best one (with maximum validation accuracy).
   	std::vector<double>::iterator best = 
   	std::max_element(std::begin(scores), std::end(scores));
   	int x = std::distance(std::begin(scores), best);
 	cv_config_t best_conf = configs.at(x);	
   	std::cout << "Best config = " << to_string(best_conf) << std::endl;
 	std::cout << "Best score = " << scores.at(x) << std::endl;
-	// Model assessment.
+	// Model assessment. Train the best configuration on the whole
+	// data set (TR + VL) and test on blind TS.
 	MLP m(std::vector<Layer>({
       	Layer(best_conf.hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
       	Layer(Y_train.n_cols, best_conf.hidden_layer_size, sigmoid, sigmoid_d)
@@ -107,7 +113,7 @@ int main(int argc, char **argv) {
 	best_conf.decay, best_conf.batch_size, best_conf.max_epochs);
 	m.train(X, Y);
 	arma::mat test_out = m.predict(X_test);
-	// Compute the accuracy on the test set.
+	// Compute the accuracy on the blind test set.
 	std::cout << "Test set score = " << 
 	accuracy(Y_test, arma::round(test_out)) << std::endl;
 	return 0;

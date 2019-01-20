@@ -1,5 +1,5 @@
 /*
- *  File: cv_test.cpp
+ *  File: cup_val.cpp
  *
  *	This file tests the MLP with a k-fold CV on the ML CUP data set.
  */
@@ -9,7 +9,6 @@
 #include "Error.hpp"
 #include "Validation.hpp"
 
-// 
 #define MLCUP_TRAIN_X "Data/ML-CUP18-TR_X.csv"
 #define MLCUP_TRAIN_Y "Data/ML-CUP18-TR_Y.csv"
 
@@ -47,7 +46,7 @@ int main(int argc, char **argv) {
   cv_config_t best_conf = search_result.best_config;
   std::cout << "Best score: " << search_result.best_score << std::endl
   << "Best configuration: " << to_string(best_conf) << std::endl;
-  // Re-train on TR and test on the TS.
+  // Re-train on the whole TR and test on the TS.
   MLP m(std::vector<Layer>({
     Layer(best_conf.hidden_layer_size, X_tr.n_cols, sigmoid, sigmoid_d),
     Layer(Y_tr.n_cols, best_conf.hidden_layer_size, identity, identity_d)

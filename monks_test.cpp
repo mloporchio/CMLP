@@ -1,5 +1,5 @@
 /*
- *  File: clf_test.cpp
+ *  File: monks_test.cpp
  *
  *	This file tests the implementation of the MLP for a classification task
  *	on one of the Monks data set.

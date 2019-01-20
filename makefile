@@ -7,19 +7,19 @@ LD_FLAGS= -framework Accelerate -lomp
 %.o: %.cpp
 	$(CXX) $(CXX_FLAGS) -c $^
 
-clf_test: Layer.o MLP.o Error.o Utils.o clf_test.o
-	$(CXX) $(LD_FLAGS) $^ -o clf_test
+monks_test: Layer.o MLP.o Error.o Utils.o monks_test.o
+	$(CXX) $(LD_FLAGS) $^ -o monks_test
 
-clf_search: Layer.o MLP.o Error.o Utils.o Validation.o clf_search.o
-	$(CXX) $(LD_FLAGS) $^ -o clf_search
+monks_val: Layer.o MLP.o Error.o Utils.o Validation.o monks_val.o
+	$(CXX) $(LD_FLAGS) $^ -o monks_val
 
-reg_test: Layer.o MLP.o Error.o Utils.o Validation.o reg_test.o
-	$(CXX) $(LD_FLAGS) $^ -o reg_test
+cup_test: Layer.o MLP.o Error.o Utils.o Validation.o cup_test.o
+	$(CXX) $(LD_FLAGS) $^ -o cup_test
 
-cv_test: Layer.o MLP.o Error.o Utils.o Validation.o cv_test.o
-	$(CXX) $(LD_FLAGS) $^ -o cv_test
+cup_val: Layer.o MLP.o Error.o Utils.o Validation.o cup_val.o
+	$(CXX) $(LD_FLAGS) $^ -o cup_val
 
-all: clf_test clf_search reg_test cv_test
+all: monks_test monks_val cup_test cup_val
 
 cleanall:
-	-rm -f *.o clf_test clf_search reg_test cv_test
+	-rm -f *.o monks_test monks_val cup_test cup_val
