@@ -25,12 +25,12 @@
 
 std::vector<cv_config_t> grid_configs() {
 	cv_grid_t parameters = {
-    	.hidden_layer_size_v=std::vector<int>({5}),
-    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5}),
-    	.alpha_v=std::vector<double>({0.6, 0.7, 0.8, 0.9}),
-    	.lambda_v=std::vector<double>({0.0001, 0.0002, 0.0003}),
-    	.decay_v=std::vector<double>({0.1, 0.2, 0.3}),
-    	.batch_size_v=std::vector<int>({40, 50, 60, 70, 80}),
+    	.hidden_layer_size_v=std::vector<int>({4, 5}),
+    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6}),
+    	.alpha_v=std::vector<double>({0.4, 0.5, 0.6, 0.7, 0.8, 0.9}),
+    	.lambda_v=std::vector<double>({0, 0.001, 0.002, 0.003, 0.004}),
+    	.decay_v=std::vector<double>({0, 0.1, 0.2, 0.3, 0.4, 0.5}),
+    	.batch_size_v=std::vector<int>({30, 40, 50, 60, 70, 80}),
     	.max_epochs_v=std::vector<int>({1000})
   	};
 	return build_configs(parameters);
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 		c.max_epochs);
 		m.train(X_train, Y_train);
 		arma::mat Y_out = m.predict(X_valid);
-		// Compute the accuracy on the validation set.
+		// Compute the score on the validation set.
 		scores.at(i) = accuracy(Y_valid, arma::round(Y_out));
 	}
 	// Look for the best one (with maximum validation accuracy).
@@ -115,6 +115,7 @@ int main(int argc, char **argv) {
 	arma::mat test_out = m.predict(X_test);
 	// Compute the accuracy on the blind test set.
 	std::cout << "Test score = " << 
+	//mean_squared_error(Y_test, test_out) << std::endl;
 	accuracy(Y_test, arma::round(test_out)) << std::endl;
 	return 0;
 }

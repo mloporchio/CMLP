@@ -120,8 +120,6 @@ double MLP::minibatch_train(
 // This method is used to train the network. The training is performed
 // using the mini-batch approach, exploiting momentum and L2 regularization.
 void MLP::train(const arma::mat &X, const arma::mat &Y) {
-  // First of all, check if X and Y have the same number of rows.
-  assert(X.n_rows == Y.n_rows);
   int k = 0, count = 0;
   bool converged = false;
   double best_error = std::numeric_limits<double>::infinity();
