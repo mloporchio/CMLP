@@ -23,37 +23,14 @@
 #define MONKS3_TEST_X "Data/monks-3.test.X.csv"
 #define MONKS3_TEST_Y "Data/monks-3.test.Y.csv"
 
-/*
-std::vector<cv_config_t> random_configs(int n_configs) {
-	// Define the space of possible configurations.
-	cv_bounds_t params = {
-		.hidden_layer_size = std::make_pair(5, 5),
-		.eta_init = std::make_pair(0.1, 0.7),
-		.alpha = std::make_pair(0.2, 0.9),
-		.lambda = std::make_pair(0.0001, 0.001),
-		.decay = std::make_pair(0.0, 0.5),
-		.batch_size = std::make_pair(10, 50),
-		.max_epochs = std::make_pair(1000, 5000)
-	};
-	config_generator cfg_gen(params);
-	std::vector<cv_config_t> configs(n_configs);
-	// Generate n_configs random configurations.
-	for (int i = 0; i < n_configs; i++) {
-		configs.at(i) = cfg_gen.get_random_config();
-	}
-	return configs;
-}
-*/
-
 std::vector<cv_config_t> grid_configs() {
 	cv_grid_t parameters = {
     	.hidden_layer_size_v=std::vector<int>({5}),
-    	.eta_init_v=std::vector<double>({0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 
-		0.4, 0.45, 0.5}),
-    	.alpha_v=std::vector<double>({0.4, 0.5, 0.6, 0.7, 0.8, 0.9}),
-    	.lambda_v=std::vector<double>({0.0001, 0.0002, 0.0003, 0.0004}),
-    	.decay_v=std::vector<double>({0.0, 0.1, 0.2, 0.3, 0.4, 0.5}),
-    	.batch_size_v=std::vector<int>({10, 20, 30, 40, 50, 60}),
+    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5}),
+    	.alpha_v=std::vector<double>({0.6, 0.7, 0.8, 0.9}),
+    	.lambda_v=std::vector<double>({0.0001, 0.0002, 0.0003}),
+    	.decay_v=std::vector<double>({0.1, 0.2, 0.3}),
+    	.batch_size_v=std::vector<int>({40, 50, 60, 70, 80}),
     	.max_epochs_v=std::vector<int>({1000})
   	};
 	return build_configs(parameters);
@@ -91,7 +68,7 @@ int main(int argc, char **argv) {
 			Y_test.load(MONKS3_TEST_Y, arma::csv_ascii);
 		break;
 		default:
-			std::cerr << "Invalid data set ID!" << std::endl;
+			std::cerr << "Error: invalid data set ID!" << std::endl;
 			return 1;
 		break;
 	}
@@ -126,7 +103,7 @@ int main(int argc, char **argv) {
   	int x = std::distance(std::begin(scores), best);
 	cv_config_t best_conf = configs.at(x);	
   	std::cout << "Best config = " << to_string(best_conf) << std::endl;
-	std::cout << "Best score = " << scores.at(x) << std::endl;
+	std::cout << "Validation score = " << scores.at(x) << std::endl;
 	// Model assessment. Train the best configuration on the whole
 	// data set (TR + VL) and test on blind TS.
 	MLP m(std::vector<Layer>({
@@ -137,7 +114,7 @@ int main(int argc, char **argv) {
 	m.train(X, Y);
 	arma::mat test_out = m.predict(X_test);
 	// Compute the accuracy on the blind test set.
-	std::cout << "Test set score = " << 
+	std::cout << "Test score = " << 
 	accuracy(Y_test, arma::round(test_out)) << std::endl;
 	return 0;
 }

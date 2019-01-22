@@ -12,7 +12,7 @@ double squared_error(arma::rowvec target, arma::rowvec output) {
   return arma::sum(arma::square(target - output)) / 2;
 }
 
-//
+// Computes the squared error derivative.
 arma::rowvec squared_error_d(arma::rowvec target, arma::rowvec output) {
   return output - target;
 }
@@ -23,7 +23,7 @@ double cross_entropy(arma::rowvec target, arma::rowvec output) {
   ((1 - target) % arma::log(1 - output)));
 }
 
-//
+// Computes the cross entropy loss derivative.
 arma::rowvec cross_entropy_d(arma::rowvec target, arma::rowvec output) {
   return ((output - target) / (output % (1 - output)));
 }
@@ -54,4 +54,10 @@ double accuracy(arma::mat target, arma::mat output) {
   // Compute the accuracy.
   arma::uvec x = (target_v == output_v);
   return ((double) arma::accu(x)) / x.n_elem;
+}
+
+// Computes the output accuracy w.r.t. target data.
+// Rounds the output to the nearest integer.
+double accuracy_r(arma::mat target, arma::mat output) {
+  return accuracy(target, arma::round(output));
 }

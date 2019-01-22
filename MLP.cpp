@@ -197,7 +197,7 @@ mlp_curve_t MLP::learning_curve(
   }
   mlp_curve_t c = {
     .train_curve = arma::vec(train_hist),
-    .val_curve = arma::vec(val_hist)
+    .test_curve = arma::vec(val_hist)
   };
   return c;
 }

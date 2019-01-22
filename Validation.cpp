@@ -6,6 +6,7 @@
  */
 
 #include <random>
+#include <fstream>
 #include <sstream>
 #include "Validation.hpp"
 

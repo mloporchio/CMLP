@@ -20,7 +20,7 @@
 // This struct contains the learning curves for training and validation set.
 typedef struct {
   arma::vec train_curve;
-  arma::vec val_curve;
+  arma::vec test_curve;
 } mlp_curve_t;
 
 class MLP {

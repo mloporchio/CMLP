@@ -18,13 +18,13 @@ typedef double (*scorer_ptr)(arma::mat, arma::mat);
 // Computes the squared error for the current instance.
 double squared_error(arma::rowvec target, arma::rowvec output);
 
-// 
+// Computes the squared error derivative.
 arma::rowvec squared_error_d(arma::rowvec target, arma::rowvec output);
 
 // Computes the cross entropy loss for the current instance.
 double cross_entropy(arma::rowvec target, arma::rowvec output);
 
-// 
+// Computes the cross entropy loss derivative.
 arma::rowvec cross_entropy_d(arma::rowvec target, arma::rowvec output);
 
 // Computes the mean euclidean error between target and output data.
@@ -34,6 +34,10 @@ double mean_squared_error(arma::mat target, arma::mat output);
 
 // Computes the output accuracy w.r.t. target data.
 double accuracy(arma::mat target, arma::mat output);
+
+// Computes the output accuracy w.r.t. target data.
+// Rounds the output to the nearest integer.
+double accuracy_r(arma::mat target, arma::mat output);
 
 
 #endif
