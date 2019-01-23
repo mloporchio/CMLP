@@ -9,8 +9,7 @@
 #include "Error.hpp"
 #include "Validation.hpp"
 
-#define MLCUP_TRAIN_X "Data/ML-CUP18-TR_X.csv"
-#define MLCUP_TRAIN_Y "Data/ML-CUP18-TR_Y.csv"
+#define MLCUP_TRAIN "Data/ML-CUP18-TR_F.csv"
 
 int main(int argc, char **argv) {
   // Check the number of arguments.
@@ -23,23 +22,24 @@ int main(int argc, char **argv) {
   int k = atoi(argv[1]);
   double frac = atof(argv[2]);
   int par_degree = atoi(argv[3]);
-	// Read the data set from the CSV files.
-	arma::mat X, Y;
-  X.load(MLCUP_TRAIN_X, arma::csv_ascii);
-  Y.load(MLCUP_TRAIN_Y, arma::csv_ascii);
+	// Read the data set from the CSV file.
+	arma::mat TR, X, Y;
+  TR.load(MLCUP_TRAIN, arma::csv_ascii);
+  X = TR.head_cols(10);
+  Y = TR.tail_cols(2);
   // Split the whole data set into TR, TS set.
-  cv_partition_t p = split_in_two(X, frac, true);
+  cv_partition_t p = split_in_two(TR, frac, true);
   arma::mat X_tr = X.rows(p.train_ids), Y_tr = Y.rows(p.train_ids),
   X_ts = X.rows(p.test_ids), Y_ts = Y.rows(p.test_ids);
   // Perform a grid search with a 10-fold CV.
   cv_grid_t parameters = {
     .hidden_layer_size_v=std::vector<int>({5, 10}),
-    .eta_init_v=std::vector<double>({0.1, 0.2}),
-    .alpha_v=std::vector<double>({0.9}),
-    .lambda_v=std::vector<double>({0.0001}),
-    .decay_v=std::vector<double>({0.1, 0.2}),
-    .batch_size_v=std::vector<int>({30, 40}),
-    .max_epochs_v=std::vector<int>({1000})
+    .eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8}),
+    .alpha_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8}),
+    .lambda_v=std::vector<double>({0.0, 0.0001, 0.001}),
+    .decay_v=std::vector<double>({0.0, 0.1, 0.2, 0.3, 0.4}),
+    .batch_size_v=std::vector<int>({20, 30, 40, 50, 60, 70, 80}),
+    .max_epochs_v=std::vector<int>({5000})
   };
   cv_search_t search_result = grid_search_CV(parameters, X_tr, Y_tr, k,
   par_degree, mean_euclidean_error, true, false);

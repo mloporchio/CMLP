@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
 	r.train(X_train, Y_train);
 	arma::mat Y_output = r.predict(X_test);
 	// Print the accuracy.
-	std::cout << "TS accuracy = " <<
-	accuracy(arma::vectorise(Y_test), arma::vectorise(arma::round(Y_output)))
+	std::cout << "TS accuracy = " << accuracy(Y_test, arma::round(Y_output))
 	<< std::endl;
 	return 0;
 }

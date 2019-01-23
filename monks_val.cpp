@@ -25,27 +25,45 @@
 
 std::vector<cv_config_t> grid_configs() {
 	cv_grid_t parameters = {
-    	.hidden_layer_size_v=std::vector<int>({4, 5}),
-    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6}),
+    	.hidden_layer_size_v=std::vector<int>({5}),
+    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4}),
     	.alpha_v=std::vector<double>({0.4, 0.5, 0.6, 0.7, 0.8, 0.9}),
-    	.lambda_v=std::vector<double>({0, 0.001, 0.002, 0.003, 0.004}),
-    	.decay_v=std::vector<double>({0, 0.1, 0.2, 0.3, 0.4, 0.5}),
-    	.batch_size_v=std::vector<int>({30, 40, 50, 60, 70, 80}),
+    	.lambda_v=std::vector<double>({0.0, 0.0001, 0.0002, 0.0003, 0.0005, 0.001}),
+    	.decay_v=std::vector<double>({0.0, 0.1, 0.2, 0.3}),
+    	.batch_size_v=std::vector<int>({30, 40, 50}),
     	.max_epochs_v=std::vector<int>({1000})
   	};
 	return build_configs(parameters);
 }
+/*
+std::vector<cv_config_t> random_configs(int k) {
+	std::vector<cv_config_t> configs(k);
+	cv_bounds_t b = {
+  		.hidden_layer_size = std::make_pair(5, 5),
+  		.eta_init = std::make_pair(0.1, 0.1),
+  		.alpha = std::make_pair(0.4, 0.4),
+  		.lambda = std::make_pair(0.0001, 0.01),
+  		.decay = std::make_pair(0.0, 0.0),
+  		.batch_size = std::make_pair(30, 30),
+  		.max_epochs = std::make_pair(1000, 1000)
+	};
+	config_generator g(b);
+	for (int i = 0; i < k; i++) configs.at(i) = g.get_random_config();
+	return configs;
+}
+*/
 
 int main(int argc, char **argv) {
 	// Read the arguments.
-	if (argc < 4) {
+	if (argc < 5) {
 		std::cerr << "Usage: " << argv[0] <<
-		" <data_set_id> <frac> <par_degree>" << std::endl;
+		" <data_set_id> <frac> <n_configs> <par_degree>" << std::endl;
 		return 1;
 	}
     int data_set_id = atoi(argv[1]);
 	double frac = atof(argv[2]);
-	int par_degree = atoi(argv[3]);
+	int n_configs = atoi(argv[3]);
+	int par_degree = atoi(argv[4]);
 	// Read the data from the CSV files.
 	arma::mat X, Y, X_test, Y_test;
 	switch (data_set_id) {
@@ -85,6 +103,7 @@ int main(int argc, char **argv) {
 	std::cout << "Testing " << configs.size() << " configurations..." 
 	<< std::endl;
 	// Try all the generated configurations.
+	#pragma omp parallel for num_threads(par_degree)
 	for (int i = 0; i < configs.size(); i++) {
 		cv_config_t c = configs.at(i);
 		MLP m(std::vector<Layer>({
