@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
   int k = atoi(argv[1]);
   double frac = atof(argv[2]);
   int par_degree = atoi(argv[3]);
-	// Read the data set from the CSV file.
-	arma::mat TR, X, Y;
+  // Read the data set from the CSV file.
+  arma::mat TR, X, Y;
   TR.load(MLCUP_TRAIN, arma::csv_ascii);
   X = TR.head_cols(10);
   Y = TR.tail_cols(2);
@@ -51,9 +51,9 @@ int main(int argc, char **argv) {
     Layer(best_conf.hidden_layer_size, X_tr.n_cols, sigmoid, sigmoid_d),
     Layer(Y_tr.n_cols, best_conf.hidden_layer_size, identity, identity_d)
   }), best_conf.eta_init, best_conf.alpha, best_conf.lambda, 
-	best_conf.decay, best_conf.batch_size, best_conf.max_epochs);
-	m.train(X_tr, Y_tr);
-	arma::mat test_out = m.predict(X_ts);
+  best_conf.decay, best_conf.batch_size, best_conf.max_epochs);
+  m.train(X_tr, Y_tr);
+  arma::mat test_out = m.predict(X_ts);
   std::cout << "Test score: " << mean_euclidean_error(Y_ts, test_out) 
   << std::endl;
   return 0;
