@@ -12,8 +12,7 @@
 // This function builds a n * m Armadillo matrix starting from
 // a std::vector containing a set of n row vectors of m elements.
 arma::mat build_matrix(const std::vector<arma::rowvec> &rows) {
-  // Check if vector is not empty.
-  assert(rows.size() > 0);
+  // Assuming that rows.size() > 0.
   arma::mat M = arma::zeros<arma::mat>(rows.size(), rows.at(0).n_elem);
   for (arma::uword i = 0; i < rows.size(); i++) M.row(i) = rows.at(i);
   return M;
