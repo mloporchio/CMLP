@@ -96,7 +96,9 @@ struct config_generator {
 
 // In this struct we store the result of the k-fold CV process.
 typedef struct {
+  // Here we store the mean of the k scores.
   double mean_score;
+  // This is the variance of the k scores.
   double variance;
 } cv_result_t;
 
@@ -136,12 +138,11 @@ bool shuffle);
 cv_result_t k_fold_CV(MLP m, const arma::mat &X, const arma::mat &Y, int k,
 scorer_ptr score_f, bool shuffle);
 
-#if 0
+
 // Performs a k-fold CV over the given data set.
 // The partitioning must have been computed in advance.
-double k_fold_CV_prep(MLP m, const arma::mat &X, const arma::mat &Y,
+cv_result_t k_fold_CV_prep(MLP m, const arma::mat &X, const arma::mat &Y,
 const std::vector<cv_partition_t> &parts, scorer_ptr score_f); 
-#endif
 
 // Grid search with k-fold cross-validation.
 cv_search_t grid_search_CV(cv_grid_t parameters, const arma::mat &X,

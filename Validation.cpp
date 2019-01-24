@@ -124,6 +124,7 @@ cv_result_t k_fold_CV(
 ) {
   // Split the data set into k partitions.
   std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
+  // Here we store the scores.
   arma::vec scores(parts.size());
   // For each partitioning...
   for (arma::uword i = 0; i < parts.size(); i++) {
@@ -139,10 +140,9 @@ cv_result_t k_fold_CV(
   return {.mean_score = arma::mean(scores), .variance = arma::var(scores)};
 }
 
-#if 0
 // Performs a k-fold CV over the given data set.
 // The partitioning must have been computed in advance.
-double k_fold_CV_prep(
+cv_result_t k_fold_CV_prep(
   // Multilayer perceptron.
   MLP m,
   // Input data set.
@@ -155,36 +155,46 @@ double k_fold_CV_prep(
   scorer_ptr score_f
 ) 
 {
-  double total_score = 0.0;
-  for (int i = 0; i < parts.size(); i++) {
+  // Here we store the scores.
+  arma::vec scores(parts.size());
+  for (arma::uword i = 0; i < parts.size(); i++) {
     cv_partition_t p = parts.at(i);
     // Train the model with the given instances and parameters.
     m.train(X.rows(p.train_ids), Y.rows(p.train_ids));
     // Test the model on the remaining part.
     arma::mat Z = m.predict(X.rows(p.test_ids));
     // Compute the score.
-    total_score += score_f(Y.rows(p.test_ids), Z);
+    scores(i) = score_f(Y.rows(p.test_ids), Z);
   }
-  return (total_score / parts.size());
+  // Return the average score on all the parts.
+  return {.mean_score = arma::mean(scores), .variance = arma::var(scores)};
 }
-#endif
 
 cv_search_t grid_search_CV(
-  cv_grid_t parameters, // Parameter grid.
-  const arma::mat &X, // Input data set.
-  const arma::mat &Y, // Target features.
-  int k, // Number of parts to split the data set into.
-  int par_degree, // Parallelism degree.
-  scorer_ptr score_f, // Pointer to a scoring function.
-  bool minimize, // Whether to minimize the score or not.
-  bool shuffle, // Whether to shuffle the patterns or not.
-  bool verbose // Verbose mode.
+  // Parameter grid.
+  cv_grid_t parameters,
+  // Input data set.
+  const arma::mat &X,
+  // Target features.
+  const arma::mat &Y,
+  // Number of parts to split the data set into.
+  int k,
+  // Parallelism degree.
+  int par_degree,
+  // Pointer to a scoring function.
+  scorer_ptr score_f,
+  // Whether to minimize the score or not.
+  bool minimize,
+  // Whether to shuffle the patterns or not.
+  bool shuffle,
+  // Verbose mode.
+  bool verbose
 )
 {
   // This will be used to count the number of tested configurations.
   std::atomic<int> count(0);
   // The partitioning is computed once and for all.
-  //std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
+  std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
   // Enumerate all the possible configurations in the search space.
   std::vector<cv_config_t> configs = build_configs(parameters);
   // We store one score for each configuration.
@@ -199,7 +209,7 @@ cv_search_t grid_search_CV(
       Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
-    cv_result_t r = k_fold_CV(m, X, Y, k, score_f, shuffle);//k_fold_CV_prep(m, X, Y, parts, score_f);
+    cv_result_t r = k_fold_CV_prep(m, X, Y, parts, score_f);
     scores.at(i) = r.mean_score;
     vars.at(i) = r.variance;
     count++;
@@ -253,11 +263,11 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
       Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
-    cv_result_t r = k_fold_CV(m, X, Y, k, score_f, shuffle);
-    //double s = k_fold_CV_prep(m, X, Y, parts, score_f);
+    cv_result_t r = k_fold_CV_prep(m, X, Y, parts, score_f);
     // Save the score.
     scores.at(i) = r.mean_score;
     vars.at(i) = r.variance;
+    // Increment the number of tested configurations.
     count++;
     // If in verbose mode, output the progress of the CV.
     if (verbose) {

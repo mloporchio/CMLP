@@ -46,6 +46,7 @@ int main(int argc, char **argv) {
   par_degree, mean_euclidean_error, true, false, true);
   cv_config_t best_conf = search_result.best_config;
   std::cout << "Best score: " << search_result.best_score << std::endl
+  << "Variance: " << search_result.variance << std::endl
   << "Best configuration: " << to_string(best_conf) << std::endl;
   return 0;
 }
