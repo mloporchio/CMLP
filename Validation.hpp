@@ -106,6 +106,10 @@ typedef struct {
 // Produces a string describing the configuration.
 std::string to_string(cv_config_t c);
 
+// Returns the number of possible configurations that can be obtained
+// from the specified grid.
+int n_configs(cv_grid_t g);
+
 // Enumerates all the possible configurations of parameters and puts them
 // into a single vector.
 std::vector<cv_config_t> build_configs(cv_grid_t g);

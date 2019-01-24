@@ -22,6 +22,14 @@ std::string to_string(cv_config_t c) {
   return s.str();
 }
 
+// Returns the number of possible configurations that can be obtained
+// from the specified grid.
+int n_configs(cv_grid_t g) {
+  return (g.hidden_layer_size_v.size() * g.eta_init_v.size() *
+  g.alpha_v.size() * g.lambda_v.size() * g.decay_v.size() *
+  g.batch_size_v.size() * g.max_epochs_v.size());
+}
+
 // Enumerates all the possible configurations of parameters and puts them
 // into a single vector.
 std::vector<cv_config_t> build_configs(cv_grid_t g) {
