@@ -38,8 +38,9 @@ int main(int argc, char **argv) {
   };
   std::cout << "Testing " << n_configs(parameters) << 
   " configurations..." << std::endl;
+  // Perform grid search CV in verbose mode.
   cv_search_t search_result = grid_search_CV(parameters, X, Y, k,
-  par_degree, mean_euclidean_error, true, false);
+  par_degree, mean_euclidean_error, true, false, true);
   cv_config_t best_conf = search_result.best_config;
   std::cout << "Best score: " << search_result.best_score << std::endl
   << "Best configuration: " << to_string(best_conf) << std::endl;

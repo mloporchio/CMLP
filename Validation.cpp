@@ -163,9 +163,12 @@ cv_search_t grid_search_CV(
   int par_degree, // Parallelism degree.
   scorer_ptr score_f, // Pointer to a scoring function.
   bool minimize, // Whether to minimize the score or not.
-  bool shuffle // Whether to shuffle the patterns or not.
+  bool shuffle, // Whether to shuffle the patterns or not.
+  bool verbose // Verbose mode.
 )
 {
+  // This will be used to count the number of tested configurations.
+  std::atomic<int> count(0);
   // The partitioning is computed once and for all.
   std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
   // Enumerate all the possible configurations in the search space.
@@ -183,6 +186,12 @@ cv_search_t grid_search_CV(
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
     scores.at(i) = k_fold_CV_prep(m, X, Y, parts, score_f);
+    count++;
+    // If in verbose mode, output the progress of the CV.
+    if (verbose) {
+      std::cout << "Tested configuration " << count << "/"
+      << configs.size() << std::endl;
+    }
   }
   // This struct is used to store the results.
   cv_search_t search_result;
@@ -201,7 +210,9 @@ cv_search_t grid_search_CV(
 // Experimental random search with CV.
 cv_search_t random_search_CV(cv_bounds_t param_bounds, int max_configs,
 const arma::mat &X, const arma::mat &Y, int k, int par_degree,
-scorer_ptr score_f, bool minimize, bool shuffle) {
+scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
+  // This will be used to count the number of tested configurations.
+  std::atomic<int> count(0);
   // Here we store the tested configurations.
   std::vector<cv_config_t> configs(max_configs);
   // Here we store the scores.
@@ -228,6 +239,12 @@ scorer_ptr score_f, bool minimize, bool shuffle) {
     double s = k_fold_CV_prep(m, X, Y, parts, score_f);
     // Save the score.
     scores.at(i) = s;
+    count++;
+    // If in verbose mode, output the progress of the CV.
+    if (verbose) {
+      std::cout << "Tested configuration " << count << "/"
+      << max_configs << std::endl;
+    }
   }
   // This struct is used to store the results.
   cv_search_t search_result;
