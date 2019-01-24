@@ -19,10 +19,13 @@ monks_val: Layer.o MLP.o Error.o Utils.o Validation.o monks_val.o
 cup_test: Layer.o MLP.o Error.o Utils.o Validation.o cup_test.o
 	$(CXX) $(LD_FLAGS) $^ -o cup_test
 
+cup_rand: Layer.o MLP.o Error.o Utils.o Validation.o cup_rand.o
+	$(CXX) $(LD_FLAGS) $^ -o cup_rand
+
 cup_val: Layer.o MLP.o Error.o Utils.o Validation.o cup_val.o
 	$(CXX) $(LD_FLAGS) $^ -o cup_val
 
-all: monks_curve monks_test monks_val cup_test cup_val
+all: monks_curve monks_test monks_val cup_test cup_rand cup_val
 
 cleanall:
-	-rm -f *.o monks_curve monks_test monks_val cup_test cup_val
+	-rm -f *.o monks_curve monks_test monks_val cup_test cup_rand cup_val

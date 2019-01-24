@@ -1,7 +1,8 @@
 /*
  *  File: cup_val.cpp
  *
- *	This file tests the MLP with a k-fold CV on the ML CUP data set.
+ *	In this file we look for the best MLP hyperparameters
+ *  with a grid search combined with a k-fold CV on the training examples.
  */
 
 #include <iostream>
@@ -11,6 +12,17 @@
 
 #define MLCUP_TRAIN_X "Data/ML-CUP18-TR_X.csv"
 #define MLCUP_TRAIN_Y "Data/ML-CUP18-TR_Y.csv"
+
+// This is the grid used for the grid search.
+cv_grid_t parameters = {
+  .hidden_layer_size_v=std::vector<int>({10}),
+  .eta_init_v=std::vector<double>({0.1}),
+  .alpha_v=std::vector<double>({0.1, 0.2, 0.3, 0.4}),
+  .lambda_v=std::vector<double>({0.001, 0.002, 0.003, 0.004}),
+  .decay_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5}),
+  .batch_size_v=std::vector<int>({20, 30, 40, 50}),
+  .max_epochs_v=std::vector<int>({2000})
+};
 
 int main(int argc, char **argv) {
   // Check the number of arguments.
@@ -27,15 +39,6 @@ int main(int argc, char **argv) {
   X.load(MLCUP_TRAIN_X, arma::csv_ascii);
   Y.load(MLCUP_TRAIN_Y, arma::csv_ascii);
   // Perform a grid search with a 10-fold CV.
-  cv_grid_t parameters = {
-    .hidden_layer_size_v=std::vector<int>({10}),
-    .eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4}),
-    .alpha_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7}),
-    .lambda_v=std::vector<double>({0.0}),
-    .decay_v=std::vector<double>({0.1, 0.2, 0.3}),
-    .batch_size_v=std::vector<int>({30, 40, 50, 60}),
-    .max_epochs_v=std::vector<int>({2000})
-  };
   std::cout << "Testing " << n_configs(parameters) << 
   " configurations..." << std::endl;
   // Perform grid search CV in verbose mode.
