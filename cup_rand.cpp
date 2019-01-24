@@ -1,7 +1,7 @@
 /*
  *  File: cup_rand.cpp
  *
- *	In this file we look for the best MLP hyperparameters
+ *  In this file we look for the best MLP hyperparameters
  *  with a random search combined with a k-fold CV on the training examples.
  */
 
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     X.load(MLCUP_TRAIN_X, arma::csv_ascii);
     Y.load(MLCUP_TRAIN_Y, arma::csv_ascii);
     std::cout << "Testing " << n_conf << " configurations..." << std::endl;
-    // Perform grid search CV in verbose mode.
+    // Perform random search CV in verbose mode.
     cv_search_t search_result = random_search_CV(bounds, n_conf, X, Y, k,
     par_degree, mean_euclidean_error, true, false, true);
     cv_config_t best_conf = search_result.best_config;
