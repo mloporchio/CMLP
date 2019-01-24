@@ -64,9 +64,12 @@ void MLP::init_weights() {
 
 // Performs a training epoch using the minibatch technique.
 double MLP::minibatch_train(
-  const arma::mat &X, // Input data set.
-  const arma::mat &Y, // Target values for the patterns.
-  id_vector &ind, // Vector of row indexes, to be used for shuffling.
+  // Input data set.
+  const arma::mat &X,
+  // Target values for the patterns.
+  const arma::mat &Y,
+  // Vector of row indexes, to be used for shuffling.
+  id_vector &ind,
   // Optional: pointer to a matrix used to save the training output.
   // If the parameter is not supplied, no output will be written.
   arma::mat *output 
@@ -156,11 +159,16 @@ arma::mat MLP::predict(const arma::mat &X) {
 
 // Generates the learning curves for the given training and validation sets.
 mlp_curve_t MLP::learning_curve(
-  const arma::mat &X_train, // Training set data.
-  const arma::mat &Y_train, // Training set target values.
-  const arma::mat &X_val, // Validation set data.
-  const arma::mat &Y_val, // Validation set target values.
-  scorer_ptr score_f // Scoring function used to evaluate the model.
+  // Training set data.
+  const arma::mat &X_train,
+   // Training set target values.
+  const arma::mat &Y_train,
+   // Validation set data.
+  const arma::mat &X_val,
+  // Validation set target values.
+  const arma::mat &Y_val, 
+  // Scoring function used to evaluate the model.
+  scorer_ptr score_f
 ) 
 {
   // This matrix is used to store the output of the training process.

@@ -50,7 +50,7 @@ class MLP {
     // Shuffle the training instances.
     bool shuffle;
     // Random number generator for weights and biases.
-    std::default_random_engine gen;
+    std::mt19937 gen;
     std::normal_distribution<double> dist;
     // Initializes the gradient matrices in each layer with zeros.
     void init_gradients();

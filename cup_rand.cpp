@@ -16,11 +16,11 @@
 // Bounds for the random search space.
 cv_bounds_t bounds = {
     .hidden_layer_size=std::make_pair(10, 10),
-    .eta_init=std::make_pair(0.1, 0.1),
-    .alpha=std::make_pair(0.1, 0.4),
-    .lambda=std::make_pair(0.001, 0.009),
-    .decay=std::make_pair(0.1, 0.5),
-    .batch_size=std::make_pair(20, 50),
+    .eta_init=std::make_pair(0.15, 0.15),
+    .alpha=std::make_pair(0.18, 0.22),
+    .lambda=std::make_pair(0.0015, 0.0025),
+    .decay=std::make_pair(0.20, 0.30),
+    .batch_size=std::make_pair(30, 40),
     .max_epochs=std::make_pair(2000, 2000),
 };
 
@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
     par_degree, mean_euclidean_error, true, false, true);
     cv_config_t best_conf = search_result.best_config;
     std::cout << "Best score: " << search_result.best_score << std::endl
+    << "Variance: " << search_result.variance << std::endl
     << "Best configuration: " << to_string(best_conf) << std::endl;
     return 0;
 }

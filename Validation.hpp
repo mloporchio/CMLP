@@ -94,14 +94,21 @@ struct config_generator {
   }
 };
 
+// In this struct we store the result of the k-fold CV process.
+typedef struct {
+  double mean_score;
+  double variance;
+} cv_result_t;
+
 // This struct represents the result of a search.
 typedef struct {
   // This is the "best" score.
   double best_score;
+  // This is the variance of that score.
+  double variance;
   // This is the configuration producing that score.
   cv_config_t best_config;
 } cv_search_t;
-
 
 // Produces a string describing the configuration.
 std::string to_string(cv_config_t c);
@@ -126,13 +133,15 @@ bool shuffle);
 
 // Performs a k-fold CV over the given data set.
 // Automatically computes the partitioning.
-double k_fold_CV(MLP m, const arma::mat &X, const arma::mat &Y, int k,
+cv_result_t k_fold_CV(MLP m, const arma::mat &X, const arma::mat &Y, int k,
 scorer_ptr score_f, bool shuffle);
 
+#if 0
 // Performs a k-fold CV over the given data set.
 // The partitioning must have been computed in advance.
 double k_fold_CV_prep(MLP m, const arma::mat &X, const arma::mat &Y,
 const std::vector<cv_partition_t> &parts, scorer_ptr score_f); 
+#endif
 
 // Grid search with k-fold cross-validation.
 cv_search_t grid_search_CV(cv_grid_t parameters, const arma::mat &X,

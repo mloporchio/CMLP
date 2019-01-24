@@ -16,11 +16,11 @@
 // This is the grid used for the grid search.
 cv_grid_t parameters = {
   .hidden_layer_size_v=std::vector<int>({10}),
-  .eta_init_v=std::vector<double>({0.1}),
-  .alpha_v=std::vector<double>({0.1, 0.2, 0.3, 0.4}),
-  .lambda_v=std::vector<double>({0.001, 0.002, 0.003, 0.004}),
-  .decay_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5}),
-  .batch_size_v=std::vector<int>({20, 30, 40, 50}),
+  .eta_init_v=std::vector<double>({0.1, 0.11, 0.12, 0.13, 0.14, 0.15}),
+  .alpha_v=std::vector<double>({0.18, 0.19, 0.20}),
+  .lambda_v=std::vector<double>({0.0016, 0.0017, 0.0018, 0.0019, 0.0020}),
+  .decay_v=std::vector<double>({0.22, 0.23, 0.24, 0.25, 0.26, 0.27}),
+  .batch_size_v=std::vector<int>({30, 40}),
   .max_epochs_v=std::vector<int>({2000})
 };
 

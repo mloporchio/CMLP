@@ -108,18 +108,54 @@ bool shuffle) {
 
 // Performs a k-fold CV over the given data set.
 // Automatically computes the partitioning.
-double k_fold_CV(
-  MLP m, // Multilayer perceptron.
-  const arma::mat &X, // Input data set.
-  const arma::mat &Y, // Target features.
-  int k, // Number of parts to split the data set into.
-  scorer_ptr score_f, // Pointer to a scoring function.
-  bool shuffle // Whether to shuffle the patterns or not.
+cv_result_t k_fold_CV(
+  // Multilayer perceptron.
+  MLP m,
+  // Input data set.
+  const arma::mat &X,
+  // Target features.
+  const arma::mat &Y,
+  // Number of parts to split the data set into.
+  int k,
+  // Pointer to a scoring function.
+  scorer_ptr score_f,
+  // Whether to shuffle the patterns or not.
+  bool shuffle
 ) {
   // Split the data set into k partitions.
   std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
-  double total_score = 0.0;
+  arma::vec scores(parts.size());
   // For each partitioning...
+  for (arma::uword i = 0; i < parts.size(); i++) {
+    cv_partition_t p = parts.at(i);
+    // Train the model with the given instances and parameters.
+    m.train(X.rows(p.train_ids), Y.rows(p.train_ids));
+    // Test the model on the remaining part.
+    arma::mat Z = m.predict(X.rows(p.test_ids));
+    // Compute the score.
+    scores(i) = score_f(Y.rows(p.test_ids), Z);
+  }
+  // Return the average score on all the parts.
+  return {.mean_score = arma::mean(scores), .variance = arma::var(scores)};
+}
+
+#if 0
+// Performs a k-fold CV over the given data set.
+// The partitioning must have been computed in advance.
+double k_fold_CV_prep(
+  // Multilayer perceptron.
+  MLP m,
+  // Input data set.
+  const arma::mat &X,
+  // Target features.
+  const arma::mat &Y,
+  // Partitioning of X.
+  const std::vector<cv_partition_t> &parts,
+  // Pointer to a scoring function.
+  scorer_ptr score_f
+) 
+{
+  double total_score = 0.0;
   for (int i = 0; i < parts.size(); i++) {
     cv_partition_t p = parts.at(i);
     // Train the model with the given instances and parameters.
@@ -129,31 +165,9 @@ double k_fold_CV(
     // Compute the score.
     total_score += score_f(Y.rows(p.test_ids), Z);
   }
-  // Return the average score on all the parts.
   return (total_score / parts.size());
 }
-
-// Performs a k-fold CV over the given data set.
-// The partitioning must have been computed in advance.
-double k_fold_CV_prep(
-    MLP m,
-    const arma::mat &X, // Input data set.
-    const arma::mat &Y, // Target features.
-    const std::vector<cv_partition_t> &parts, // Partitioning of X.
-    scorer_ptr score_f // Pointer to a scoring function.
-) {
-    double total_score = 0.0;
-    for (int i = 0; i < parts.size(); i++) {
-        cv_partition_t p = parts.at(i);
-        // Train the model with the given instances and parameters.
-        m.train(X.rows(p.train_ids), Y.rows(p.train_ids));
-        // Test the model on the remaining part.
-        arma::mat Z = m.predict(X.rows(p.test_ids));
-        // Compute the score.
-        total_score += score_f(Y.rows(p.test_ids), Z);
-    }
-    return (total_score / parts.size());
-}
+#endif
 
 cv_search_t grid_search_CV(
   cv_grid_t parameters, // Parameter grid.
@@ -170,11 +184,11 @@ cv_search_t grid_search_CV(
   // This will be used to count the number of tested configurations.
   std::atomic<int> count(0);
   // The partitioning is computed once and for all.
-  std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
+  //std::vector<cv_partition_t> parts = make_partitions(X, k, shuffle);
   // Enumerate all the possible configurations in the search space.
   std::vector<cv_config_t> configs = build_configs(parameters);
   // We store one score for each configuration.
-  std::vector<double> scores(configs.size());
+  std::vector<double> scores(configs.size()), vars(configs.size());
   // Test each configuration with a given parallelism degree...
   #pragma omp parallel for num_threads(par_degree)
   for (int i = 0; i < configs.size(); i++) {
@@ -185,7 +199,9 @@ cv_search_t grid_search_CV(
       Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
-    scores.at(i) = k_fold_CV_prep(m, X, Y, parts, score_f);
+    cv_result_t r = k_fold_CV(m, X, Y, k, score_f, shuffle);//k_fold_CV_prep(m, X, Y, parts, score_f);
+    scores.at(i) = r.mean_score;
+    vars.at(i) = r.variance;
     count++;
     // If in verbose mode, output the progress of the CV.
     if (verbose) {
@@ -202,6 +218,7 @@ cv_search_t grid_search_CV(
   std::max_element(std::begin(scores), std::end(scores)));
   int x = std::distance(std::begin(scores), best);
   search_result.best_score = scores.at(x);
+  search_result.variance = vars.at(x);
   search_result.best_config = configs.at(x);
   // Return that score.
   return search_result;
@@ -216,7 +233,7 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
   // Here we store the tested configurations.
   std::vector<cv_config_t> configs(max_configs);
   // Here we store the scores.
-  std::vector<double> scores(max_configs);
+  std::vector<double> scores(max_configs), vars(max_configs);
   // Build a configuration generator.
   config_generator generator(param_bounds);
   // Compute the partitioning is computed once and for all.
@@ -236,9 +253,11 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
       Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
-    double s = k_fold_CV_prep(m, X, Y, parts, score_f);
+    cv_result_t r = k_fold_CV(m, X, Y, k, score_f, shuffle);
+    //double s = k_fold_CV_prep(m, X, Y, parts, score_f);
     // Save the score.
-    scores.at(i) = s;
+    scores.at(i) = r.mean_score;
+    vars.at(i) = r.variance;
     count++;
     // If in verbose mode, output the progress of the CV.
     if (verbose) {
@@ -255,6 +274,7 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
   std::max_element(std::begin(scores), std::end(scores)));
   int x = std::distance(std::begin(scores), best);
   search_result.best_score = scores.at(x);
+  search_result.variance = vars.at(x);
   search_result.best_config = configs.at(x);
   // Return that score.
   return search_result;
