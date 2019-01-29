@@ -23,47 +23,26 @@
 #define MONKS3_TEST_X "Data/monks-3.test.X.csv"
 #define MONKS3_TEST_Y "Data/monks-3.test.Y.csv"
 
-std::vector<cv_config_t> grid_configs() {
-	cv_grid_t parameters = {
-    	.hidden_layer_size_v=std::vector<int>({5}),
-    	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4}),
-    	.alpha_v=std::vector<double>({0.4, 0.5, 0.6, 0.7, 0.8, 0.9}),
-    	.lambda_v=std::vector<double>({0.0, 0.0001, 0.0002, 0.0003, 0.0005, 0.001}),
-    	.decay_v=std::vector<double>({0.0, 0.1, 0.2, 0.3}),
-    	.batch_size_v=std::vector<int>({30, 40, 50}),
-    	.max_epochs_v=std::vector<int>({1000})
-  	};
-	return build_configs(parameters);
-}
-/*
-std::vector<cv_config_t> random_configs(int k) {
-	std::vector<cv_config_t> configs(k);
-	cv_bounds_t b = {
-  		.hidden_layer_size = std::make_pair(5, 5),
-  		.eta_init = std::make_pair(0.1, 0.1),
-  		.alpha = std::make_pair(0.4, 0.4),
-  		.lambda = std::make_pair(0.0001, 0.01),
-  		.decay = std::make_pair(0.0, 0.0),
-  		.batch_size = std::make_pair(30, 30),
-  		.max_epochs = std::make_pair(1000, 1000)
-	};
-	config_generator g(b);
-	for (int i = 0; i < k; i++) configs.at(i) = g.get_random_config();
-	return configs;
-}
-*/
+cv_grid_t parameters = {
+   	.hidden_layer_size_v=std::vector<int>({2, 3, 4, 5}),
+   	.eta_init_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7}),
+   	.alpha_v=std::vector<double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}),
+   	.lambda_v=std::vector<double>({0.0, 0.001, 0.002, 0.003}),
+   	.decay_v=std::vector<double>({0.0, 0.1, 0.2, 0.3}),
+   	.batch_size_v=std::vector<int>({10, 20, 30, 40, 50}),
+   	.max_epochs_v=std::vector<int>({1000})
+};
 
 int main(int argc, char **argv) {
 	// Read the arguments.
-	if (argc < 5) {
+	if (argc < 4) {
 		std::cerr << "Usage: " << argv[0] <<
-		" <data_set_id> <frac> <n_configs> <par_degree>" << std::endl;
+		" <data_set_id> <frac> <par_degree>" << std::endl;
 		return 1;
 	}
     int data_set_id = atoi(argv[1]);
 	double frac = atof(argv[2]);
-	int n_configs = atoi(argv[3]);
-	int par_degree = atoi(argv[4]);
+	int par_degree = atoi(argv[3]);
 	// Read the data from the CSV files.
 	arma::mat X, Y, X_test, Y_test;
 	switch (data_set_id) {
@@ -98,11 +77,12 @@ int main(int argc, char **argv) {
 	X_valid = X.rows(split_p.test_ids),
 	Y_valid = Y.rows(split_p.test_ids);
 	// Generate all the configurations in the grid.
-	std::vector<cv_config_t> configs = grid_configs();
+	std::vector<cv_config_t> configs = build_configs(parameters);
 	std::vector<double> scores(configs.size());
 	std::cout << "Testing " << configs.size() << " configurations..." 
 	<< std::endl;
 	// Try all the generated configurations.
+	std::atomic<int> count(0);
 	#pragma omp parallel for num_threads(par_degree)
 	for (int i = 0; i < configs.size(); i++) {
 		cv_config_t c = configs.at(i);
@@ -115,6 +95,9 @@ int main(int argc, char **argv) {
 		arma::mat Y_out = m.predict(X_valid);
 		// Compute the score on the validation set.
 		scores.at(i) = accuracy(Y_valid, arma::round(Y_out));
+		count++;
+		std::cout << "Tested configuration " << count << "/" << configs.size()
+		<< std::endl;
 	}
 	// Look for the best one (with maximum validation accuracy).
   	std::vector<double>::iterator best = 
@@ -122,7 +105,7 @@ int main(int argc, char **argv) {
   	int x = std::distance(std::begin(scores), best);
 	cv_config_t best_conf = configs.at(x);	
   	std::cout << "Best config = " << to_string(best_conf) << std::endl;
-	std::cout << "Validation score = " << scores.at(x) << std::endl;
+	std::cout << "Best score = " << scores.at(x) << std::endl;
 	// Model assessment. Train the best configuration on the whole
 	// data set (TR + VL) and test on blind TS.
 	MLP m(std::vector<Layer>({
@@ -133,8 +116,7 @@ int main(int argc, char **argv) {
 	m.train(X, Y);
 	arma::mat test_out = m.predict(X_test);
 	// Compute the accuracy on the blind test set.
-	std::cout << "Test score = " << 
-	//mean_squared_error(Y_test, test_out) << std::endl;
+	std::cout << "Test accuracy = " << 
 	accuracy(Y_test, arma::round(test_out)) << std::endl;
 	return 0;
 }

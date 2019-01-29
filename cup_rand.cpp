@@ -13,15 +13,14 @@
 #define MLCUP_TRAIN_X "Data/ML-CUP18-TR_X.csv"
 #define MLCUP_TRAIN_Y "Data/ML-CUP18-TR_Y.csv"
 
-// Bounds for the random search space.
 cv_bounds_t bounds = {
-    .hidden_layer_size=std::make_pair(10, 10),
-    .eta_init=std::make_pair(0.15, 0.15),
-    .alpha=std::make_pair(0.18, 0.22),
-    .lambda=std::make_pair(0.0015, 0.0025),
-    .decay=std::make_pair(0.20, 0.30),
-    .batch_size=std::make_pair(30, 40),
-    .max_epochs=std::make_pair(2000, 2000),
+    .hidden_layer_size=std::make_pair(15, 20),
+    .eta_init=std::make_pair(0.1, 0.5),
+    .alpha=std::make_pair(0.1, 0.5),
+    .lambda=std::make_pair(0.001, 0.002),
+    .decay=std::make_pair(0.2, 0.4),
+    .batch_size=std::make_pair(20, 40),
+    .max_epochs=std::make_pair(3000, 3000)
 };
 
 int main(int argc, char **argv) {

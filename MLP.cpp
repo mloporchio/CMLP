@@ -24,24 +24,30 @@
 //    (optional parameter, default = 1E-4)
 //  - shuffle: whether to shuffle the examples or not
 //    (optional parameter, default = true)
-//  - seed: seed for random number initialization 
-//    (optional parameter, default = 1)
+//  - seed: pointer to a seed for random number initialization 
+//    (optional parameter, default = NULL)
 MLP::MLP(std::vector<Layer> v, double eta_init, double alpha, double lambda,
 double decay, int batch_size, int max_epochs, int max_unchanged, 
-double tol, bool shuffle, unsigned int seed) 
-  : layers(v), gen(seed), dist(DIST_MEAN, DIST_VAR)
+double tol, bool shuffle, unsigned int *seed) 
+: layers(v), dist(DIST_MEAN, DIST_VAR)
 {
-    this -> l = layers.size();
-    this -> eta_init = eta_init;
-    this -> eta = eta_init;
-    this -> alpha = alpha;
-    this -> lambda = lambda;
-    this -> decay = decay;
-    this -> tol = tol;
-    this -> batch_size = batch_size;
-    this -> max_epochs = max_epochs;
-    this -> max_unchanged = max_unchanged;
-    this -> shuffle = shuffle;
+  this -> l = layers.size();
+  this -> eta_init = eta_init;
+  this -> eta = eta_init;
+  this -> alpha = alpha;
+  this -> lambda = lambda;
+  this -> decay = decay;
+  this -> tol = tol;
+  this -> batch_size = batch_size;
+  this -> max_epochs = max_epochs;
+  this -> max_unchanged = max_unchanged;
+  this -> shuffle = shuffle;
+  // Initialize the random number generator.
+  if (seed) this -> gen = std::mt19937(*seed);
+  else {
+    std::random_device rd;
+    this -> gen = std::mt19937(rd());
+  }
 }
 
 // Initializes the gradient matrices in each layer with zeros.
@@ -72,7 +78,7 @@ double MLP::minibatch_train(
   id_vector &ind,
   // Optional: pointer to a matrix used to save the training output.
   // If the parameter is not supplied, no output will be written.
-  arma::mat *output 
+  arma::mat *Z
 ) 
 {
   double error = 0.0;
@@ -91,7 +97,7 @@ double MLP::minibatch_train(
       layers[0].forward(x);
       for (int j = 1; j < l; j++) layers[j].forward(layers[j-1].y);
       // Store the result in the output matrix, if needed.
-      if (output) output -> row(i) = layers[l-1].y;
+      if (Z) Z -> row(i) = layers[l-1].y;
       // Compute the loss on the current example.
       error += squared_error(y, layers[l-1].y);
       // Backpropagate the error.
@@ -122,7 +128,7 @@ double MLP::minibatch_train(
 
 // This method is used to train the network. The training is performed
 // using the mini-batch approach, exploiting momentum and L2 regularization.
-void MLP::train(const arma::mat &X, const arma::mat &Y) {
+void MLP::train(const arma::mat &X, const arma::mat &Y, arma::mat *Z) {
   int k = 0, count = 0;
   bool converged = false;
   double best_error = std::numeric_limits<double>::infinity();
@@ -135,7 +141,7 @@ void MLP::train(const arma::mat &X, const arma::mat &Y) {
   // Main loop of the training method.
   while (!converged && k < max_epochs) {
     // Train using the minibatch approach.
-    double curr_error = minibatch_train(X, Y, ind);
+    double curr_error = minibatch_train(X, Y, ind, Z);
     // Check if convergence has been reached.
     count = (curr_error > best_error - tol) ? (count + 1) : 0;
     if (curr_error < best_error) best_error = curr_error;
@@ -155,6 +161,17 @@ arma::mat MLP::predict(const arma::mat &X) {
     output.at(i) = layers[l-1].y;
   }
   return build_matrix(output);
+}
+
+// This function can be used to predict target values for new data.
+// Results will be stored in the supplied matrix Y.
+void MLP::predict(const arma::mat &X, arma::mat &Y) {
+  assert(X.n_rows == Y.n_rows);
+  for (arma::uword i = 0; i < X.n_rows; i++) {
+    layers[0].forward(X.row(i));
+    for (int j = 1; j < l; j++) layers[j].forward(layers[j-1].y);
+    Y.row(i) = layers[l-1].y;
+  }
 }
 
 // Generates the learning curves for the given training and validation sets.

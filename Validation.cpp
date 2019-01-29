@@ -155,18 +155,22 @@ cv_result_t k_fold_CV_prep(
   scorer_ptr score_f
 ) 
 {
-  // Here we store the scores.
+  // In this vector we store the scores for each fold.
   arma::vec scores(parts.size());
   for (arma::uword i = 0; i < parts.size(); i++) {
     cv_partition_t p = parts.at(i);
+    // Split the data set according to the current partitioning.
+    const arma::mat &X_t = X.rows(p.train_ids), &Y_t = Y.rows(p.train_ids),
+    &X_v = X.rows(p.test_ids), &Y_v = Y.rows(p.test_ids);
+    arma::mat Z(Y_v.n_rows, Y_v.n_cols);
     // Train the model with the given instances and parameters.
     m.train(X.rows(p.train_ids), Y.rows(p.train_ids));
     // Test the model on the remaining part.
-    arma::mat Z = m.predict(X.rows(p.test_ids));
+    m.predict(X_v, Z);
     // Compute the score.
     scores(i) = score_f(Y.rows(p.test_ids), Z);
   }
-  // Return the average score on all the parts.
+  // Return the average of the scores and their variance.
   return {.mean_score = arma::mean(scores), .variance = arma::var(scores)};
 }
 
@@ -230,7 +234,6 @@ cv_search_t grid_search_CV(
   search_result.best_score = scores.at(x);
   search_result.variance = vars.at(x);
   search_result.best_config = configs.at(x);
-  // Return that score.
   return search_result;
 }
 
@@ -286,6 +289,5 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
   search_result.best_score = scores.at(x);
   search_result.variance = vars.at(x);
   search_result.best_config = configs.at(x);
-  // Return that score.
   return search_result;
 }

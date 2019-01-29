@@ -58,7 +58,7 @@ class MLP {
     void init_weights();
     // Performs a training epoch using the minibatch technique.
     double minibatch_train(const arma::mat &X, const arma::mat &Y, 
-    id_vector &ind, arma::mat *output = NULL);
+    id_vector &ind, arma::mat *Z = NULL);
   public:
     // Class constructor.
     //  - v: vector of layers
@@ -78,12 +78,15 @@ class MLP {
     //    (optional parameter, default = 1)
     MLP(std::vector<Layer> v, double eta_init, double alpha, double lambda,
     double decay, int batch_size, int max_epochs, int max_unchanged = 10, 
-    double tol = 1E-4, bool shuffle = true, unsigned int seed = 1U);
+    double tol = 1E-4, bool shuffle = true, unsigned int *seed = NULL);
     // This method is used to train the network. The training is performed
     // using the mini-batch approach, exploiting momentum and L2 regularization.
-    void train(const arma::mat &X, const arma::mat &Y);
+    void train(const arma::mat &X, const arma::mat &Y, arma::mat *Z = NULL);
     // This function can be used to predict target values for new data.
     arma::mat predict(const arma::mat &X);
+    // This function can be used to predict target values for new data.
+    // Results will be stored in the supplied matrix Y.
+    void predict(const arma::mat &X, arma::mat &Y);
     // Generates the learning curves for the given training and validation sets.
     mlp_curve_t learning_curve(const arma::mat &X_train, 
     const arma::mat &Y_train, const arma::mat &X_val, const arma::mat &Y_val,

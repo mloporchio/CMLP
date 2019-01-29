@@ -52,14 +52,17 @@ int main(int argc, char **argv) {
   Y_test.load(MLCUP_TEST_Y, arma::csv_ascii);
   // Build the network.
 	MLP r(std::vector<Layer>({
-		Layer(hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
-		Layer(Y_train.n_cols, hidden_layer_size, identity, identity_d)
+	  Layer(hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
+	  Layer(Y_train.n_cols, hidden_layer_size, identity, identity_d)
 	}), eta, alpha, lambda, decay, batch_size, max_iter);
   // Train on the whole TR set.
-  r.train(X_train, Y_train);
-  // Test on the internal test set.
+  arma::mat Z(Y_train.n_rows, Y_train.n_cols);
+  r.train(X_train, Y_train, &Z);
+  // Test on the TS (internal test set).
   arma::mat Y_out = r.predict(X_test);
-  std::cout << "MEE on internal test set: " <<
-  mean_euclidean_error(Y_test, Y_out) << std::endl;
+  double tr_mee = mean_euclidean_error(Y_train, Z);
+  double ts_mee = mean_euclidean_error(Y_test, Y_out);
+  std::cout << "MEE on TR: " << tr_mee << std::endl;
+  std::cout << "MEE on TS: " << ts_mee << std::endl;
   return 0;
 }

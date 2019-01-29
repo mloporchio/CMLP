@@ -7,9 +7,11 @@
  */
 
 #include <iostream>
+#include <random>
 #include "MLP.hpp"
 #include "Error.hpp"
 
+#define MAX_TRIALS 100
 #define MONKS1_TRAIN_X "Data/monks-1.train.X.csv"
 #define MONKS1_TRAIN_Y "Data/monks-1.train.Y.csv"
 #define MONKS1_TEST_X "Data/monks-1.test.X.csv"
@@ -67,16 +69,32 @@ int main(int argc, char **argv) {
 			return 1;
 		break;
 	}
-	// Build the network.
-	MLP r(std::vector<Layer>({
-		Layer(hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
-		Layer(Y_train.n_cols, hidden_layer_size, sigmoid, sigmoid_d)
-	}), eta, alpha, lambda, decay, batch_size, max_iter);
-	// Train the model.
-	r.train(X_train, Y_train);
-	arma::mat Y_output = r.predict(X_test);
-	// Print the accuracy.
-	std::cout << "TS accuracy = " << accuracy(Y_test, arma::round(Y_output))
-	<< std::endl;
+	//
+	double total_tr_acc = 0.0, total_ts_acc = 0.0,
+	total_tr_mse = 0.0, total_ts_mse = 0.0, 
+	mean_tr_acc, mean_ts_acc, mean_tr_mse, mean_ts_mse;
+	arma::mat Z(Y_train.n_rows, Y_train.n_cols);
+	for (int i = 0; i < MAX_TRIALS; i++) {
+		// Build the network.
+		MLP r(std::vector<Layer>({
+			Layer(hidden_layer_size, X_train.n_cols, sigmoid, sigmoid_d),
+			Layer(Y_train.n_cols, hidden_layer_size, sigmoid, sigmoid_d)
+		}), eta, alpha, lambda, decay, batch_size, max_iter);
+		// Train the model.
+		r.train(X_train, Y_train, &Z);
+		arma::mat Y_output = r.predict(X_test);
+		total_tr_mse += mean_squared_error(Y_train, Z);
+		total_ts_mse += mean_squared_error(Y_test, Y_output);
+		total_tr_acc += accuracy(Y_train, arma::round(Z));
+		total_ts_acc += accuracy(Y_test, arma::round(Y_output));
+	}
+	mean_tr_mse = total_tr_mse / MAX_TRIALS;
+	mean_ts_mse = total_ts_mse / MAX_TRIALS;
+	mean_tr_acc = total_tr_acc / MAX_TRIALS;
+	mean_ts_acc = total_ts_acc / MAX_TRIALS;
+	std::cout << "Mean MSE over TR: " << mean_tr_mse << std::endl;
+	std::cout << "Mean MSE over TS: " << mean_ts_mse << std::endl;
+	std::cout << "Mean accuracy over TR: " << mean_tr_acc << std::endl;
+	std::cout << "Mean accuracy over TS: " << mean_ts_acc << std::endl;
 	return 0;
 }
