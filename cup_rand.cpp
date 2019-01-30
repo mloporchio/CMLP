@@ -14,13 +14,13 @@
 #define MLCUP_TRAIN_Y "Data/ML-CUP18-TR_Y.csv"
 
 cv_bounds_t bounds = {
-    .hidden_layer_size=std::make_pair(15, 20),
-    .eta_init=std::make_pair(0.1, 0.5),
-    .alpha=std::make_pair(0.1, 0.5),
-    .lambda=std::make_pair(0.001, 0.002),
-    .decay=std::make_pair(0.2, 0.4),
-    .batch_size=std::make_pair(20, 40),
-    .max_epochs=std::make_pair(3000, 3000)
+    .hidden_layer_size=std::make_pair(30, 30),
+    .eta_init=std::make_pair(0.1, 0.15),
+    .alpha=std::make_pair(0.1, 0.2),
+    .lambda=std::make_pair(0.007, 0.009),
+    .decay=std::make_pair(0.5, 0.7),
+    .batch_size=std::make_pair(30, 30),
+    .max_epochs=std::make_pair(5000, 5000)
 };
 
 int main(int argc, char **argv) {

@@ -159,16 +159,15 @@ cv_result_t k_fold_CV_prep(
   arma::vec scores(parts.size());
   for (arma::uword i = 0; i < parts.size(); i++) {
     cv_partition_t p = parts.at(i);
-    // Split the data set according to the current partitioning.
-    const arma::mat &X_t = X.rows(p.train_ids), &Y_t = Y.rows(p.train_ids),
-    &X_v = X.rows(p.test_ids), &Y_v = Y.rows(p.test_ids);
-    arma::mat Z(Y_v.n_rows, Y_v.n_cols);
+    const arma::mat &X_tr = X.rows(p.train_ids), &Y_tr = Y.rows(p.train_ids),
+    &X_vl = X.rows(p.test_ids), &Y_vl = Y.rows(p.test_ids);
+    arma::mat Z(Y_vl.n_rows, Y_vl.n_cols);
     // Train the model with the given instances and parameters.
-    m.train(X.rows(p.train_ids), Y.rows(p.train_ids));
+    m.train(X_tr, Y_tr);
     // Test the model on the remaining part.
-    m.predict(X_v, Z);
-    // Compute the score.
-    scores(i) = score_f(Y.rows(p.test_ids), Z);
+    m.predict(X_vl, Z);
+    // Compute the score on the validation set.
+    scores(i) = score_f(Y_vl, Z);
   }
   // Return the average of the scores and their variance.
   return {.mean_score = arma::mean(scores), .variance = arma::var(scores)};
@@ -262,8 +261,8 @@ scorer_ptr score_f, bool minimize, bool shuffle, bool verbose) {
     cv_config_t c = configs.at(i);
     // Build the model according to the current configuration.
     MLP m(std::vector<Layer>({
-      Layer(c.hidden_layer_size, X.n_cols, sigmoid, sigmoid_d),
-      Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
+	    Layer(c.hidden_layer_size, X.n_cols, sigmoid, sigmoid_d),
+	    Layer(Y.n_cols, c.hidden_layer_size, identity, identity_d)
     }), c.eta_init, c.alpha, c.lambda, c.decay, c.batch_size, c.max_epochs);
     // Do a k-fold CV with the current model.
     cv_result_t r = k_fold_CV_prep(m, X, Y, parts, score_f);

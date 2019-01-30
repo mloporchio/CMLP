@@ -24,7 +24,7 @@
 #define TS_CURVE_FILENAME "Curve/test.csv"
 
 int main(int argc, char **argv) {
-    	// Check the number of arguments.
+    // Check the number of arguments.
 	if (argc < 10) {
 		std::cerr << "Usage:" << std::endl
 		<< argv[0]

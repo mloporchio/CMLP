@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
 			return 1;
 		break;
 	}
-	//
 	double total_tr_acc = 0.0, total_ts_acc = 0.0,
 	total_tr_mse = 0.0, total_ts_mse = 0.0, 
 	mean_tr_acc, mean_ts_acc, mean_tr_mse, mean_ts_mse;
